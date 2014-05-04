@@ -21,6 +21,7 @@ var renderToCanvas = function (width, height, image) {
 var game = (function () {
 
     // Constants
+    var NUM_SCANLINES = 5;
     var SCALE = 20;
 
     // Enums
@@ -70,6 +71,8 @@ var game = (function () {
     // State
     var keys = [];
     var spritesheets = [];
+    var lastScanline = 0;
+    var scanline = 0;
     var ctx;
     var level;
     var sprites = [];
@@ -113,7 +116,8 @@ var game = (function () {
         this.width = 3;
         this.damage = 3;
 
-        this.update = function () {};
+        this.update = function () {
+        };
 
         this.draw = function () {
             ctx.translate(0, -3 * SCALE);
@@ -137,7 +141,7 @@ var game = (function () {
             if (now - this.lastUpdate > 80) {
                 this.lastUpdate = now;
 
-                if(this.lives > 0) {
+                if (this.lives > 0) {
                     // Move if left or right is pressed
                     if (keys[KeyCode.LEFT] > 0 || keys[KeyCode.RIGHT] > 0) {
                         this.direction = keys[KeyCode.LEFT] > keys[KeyCode.RIGHT] ? Direction.LEFT : Direction.RIGHT;
@@ -208,7 +212,7 @@ var game = (function () {
         };
 
         this.draw = function () {
-            if(this.lives > 0) {
+            if (this.lives > 0) {
                 // Draw player
                 ctx.translate(0, -6 * SCALE);
                 ctx.drawImage(spritesheets['player'], this.sx * 3, this.sy * 6, 3, 6, this.x * SCALE, this.y * SCALE, 3 * SCALE, 6 * SCALE);
@@ -219,8 +223,8 @@ var game = (function () {
             }
         };
 
-        this.takeDamage = function(damage) {
-            if(now - this.lastDamage > 500) {
+        this.takeDamage = function (damage) {
+            if (now - this.lastDamage > 500) {
                 this.lives -= damage;
                 this.lastDamage = now;
             }
@@ -285,7 +289,7 @@ var game = (function () {
         ctx.drawImage(spritesheets[level.image], 0, 0, level.width, level.height, -offsetX * SCALE, -offsetY * SCALE, level.width * SCALE, level.height * SCALE);
 
         // Draw sprites and player
-        for (var i = sprites.length - 1; i >= 0 ; i--) {
+        for (var i = sprites.length - 1; i >= 0; i--) {
             ctx.save();
 
             //Translate canvas to sprite position
@@ -298,11 +302,11 @@ var game = (function () {
 
         // Draw HUD
         for (var i = 0; i < sprites[0].lives; i++) {
-            ctx.drawImage(spritesheets['heart'], 0, 0, 3, 3, (1 + i * 4) * SCALE, 1 * SCALE, 3 * SCALE, 3 * SCALE);
+            ctx.drawImage(spritesheets['heart'], 0, 0, 5, 6, (1 + i * 6) * SCALE, 1 * SCALE, 5 * SCALE, 6 * SCALE);
         }
 
-        if(sprites[0].x >= level.width) {
-            if(currentLevel < levels.length - 1) {
+        if (sprites[0].x >= level.width) {
+            if (currentLevel < levels.length - 1) {
                 currentLevel++;
                 loadLevel(currentLevel);
             } else {
@@ -313,7 +317,23 @@ var game = (function () {
             }
         }
 
+        // Draw FX
+        applyFx();
+
         requestAnimFrame(loop);
+    }
+
+    function applyFx() {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.drawImage(spritesheets['overlay'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
+        ctx.globalAlpha = 1;
+        ctx.drawImage(spritesheets['scanline' + scanline], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
+        if(now - lastScanline > 100) {
+            lastScanline = now;
+            scanline = (scanline + 1) % NUM_SCANLINES;
+        }
+        ctx.restore();
     }
 
     function loadLevel(l) {
@@ -369,7 +389,7 @@ var game = (function () {
             }
         };
 
-        var sources = [ 'img/player.png', 'img/heart.png', 'img/zombie.png', 'levels/level1.png', 'img/dead.png', 'img/spikes.png', 'img/end.png', 'img/splash.png' ];
+        var sources = [ 'img/player.png', 'img/heart.png', 'img/zombie.png', 'levels/level1.png', 'img/dead.png', 'img/spikes.png', 'img/end.png', 'img/splash.png', 'img/overlay.png' ];
         var loaded = 0;
         var onload = function () {
             loaded++;
@@ -378,7 +398,9 @@ var game = (function () {
             console.log('Loaded ' + name);
             if (loaded >= sources.length) {
                 ctx.drawImage(spritesheets['splash'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
-                window.setTimeout(function() {
+                applyFx();
+
+                window.setTimeout(function () {
                     //Set up key listener
                     document.onkeyup = keyListener;
                     document.onkeydown = keyListener;
@@ -388,6 +410,21 @@ var game = (function () {
                 }, 2000);
             }
         };
+
+        for (var x = 0; x < NUM_SCANLINES; x++) {
+            var buffer = document.createElement('canvas');
+            buffer.width = 32;
+            buffer.height = 32;
+            var bufferCtx = buffer.getContext('2d');
+            for (var i = 0; i < 32; i++) {
+                for (var j = 0; j < 32; j++) {
+                    var alpha = j % 6 >= 3 && j % 6 <= 5 ? Math.random() * 0.05: 0.04 + Math.random() * 0.05;
+                    bufferCtx.fillStyle = 'rgba(0, 0, 0, ' + alpha + ')';
+                    bufferCtx.fillRect(i, j, 1, 1);
+                }
+            }
+            spritesheets['scanline' + x] = buffer;
+        }
 
         for (var i = 0; i < sources.length; i++) {
             var imageObj = new Image();
