@@ -68,9 +68,37 @@ var game = (function () {
         }
     ];
 
+    var keyListener = function (e) {
+        var pressed = e.type == 'keydown';
+        switch (e.keyCode) {
+            case 65: //a
+            case 37: //left arrow
+                keys[KeyCode.LEFT] = pressed ? e.timeStamp : 0;
+                return true;
+
+            case 68: //d
+            case 39: //left arrow
+                keys[KeyCode.RIGHT] = pressed ? e.timeStamp : 0;
+                return true;
+
+            case 87: //w
+            case 38: //up arrow
+                keys[KeyCode.UP] = pressed ? e.timeStamp : 0;
+                return true;
+
+            case 32: //space
+                keys[KeyCode.ACTION] = pressed ? e.timeStamp : 0;
+                e.preventDefault();
+
+                return true;
+        }
+    };
+
+    var spritesheets = [];
+    var sounds = [];
+
     // State
     var keys = [];
-    var spritesheets = [];
     var lastScanline = 0;
     var scanline = 0;
     var ctx;
@@ -100,6 +128,11 @@ var game = (function () {
 
                 this.sx = (this.sx + 1) % 4;
                 this.sy = this.direction == Direction.LEFT ? 1 : 0;
+            }
+
+            if(Math.abs(this.x - sprites[0].x) < 15 && (!sounds['zombie'].lastPlayed || now - sounds['zombie'].lastPlayed > 3000)) {
+                sounds['zombie'].lastPlayed = now;
+                sounds['zombie'].play();
             }
         };
 
@@ -224,7 +257,7 @@ var game = (function () {
         };
 
         this.takeDamage = function (damage) {
-            if (now - this.lastDamage > 500) {
+            if (now - this.lastDamage > 500 && this.lives > 0) {
                 this.lives -= damage;
                 this.lastDamage = now;
             }
@@ -277,10 +310,17 @@ var game = (function () {
         var offsetX = sprites[0].x - 15;
         var offsetY = sprites[0].y - 16;
 
+        // Screen shake when hurt
+        var shake = 200;
+        var diff = now - sprites[0].lastDamage;
+        if (diff < shake) {
+            offsetX += diff < shake / 4 || diff > shake * 3 / 4 ? -1 : 1;
+            offsetY += diff < shake / 2 ? -1 : 1;
+        }
+
         // Enforce upper/lower bounds for offset
         offsetX = Math.max(0, Math.min(level.width - 32, offsetX));
         offsetY = Math.max(0, Math.min(level.height - 32, offsetY));
-        //console.log(offsetX + ', ' + offsetY);
 
         ctx.fillStyle = '#16a9fe';
         ctx.fillRect(0, 0, 32 * SCALE, 32 * SCALE);
@@ -311,6 +351,7 @@ var game = (function () {
                 loadLevel(currentLevel);
             } else {
                 ctx.drawImage(spritesheets['end'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
+                applyFx();
                 document.onkeyup = null;
                 document.onkeydown = null;
                 return;
@@ -329,7 +370,7 @@ var game = (function () {
         ctx.drawImage(spritesheets['overlay'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
         ctx.globalAlpha = 1;
         ctx.drawImage(spritesheets['scanline' + scanline], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
-        if(now - lastScanline > 100) {
+        if (now - lastScanline > 100) {
             lastScanline = now;
             scanline = (scanline + 1) % NUM_SCANLINES;
         }
@@ -363,54 +404,71 @@ var game = (function () {
         ctx.msImageSmoothingEnabled = false;
         ctx.imageSmoothingEnabled = false;
 
-        var keyListener = function (e) {
-            var pressed = e.type == 'keydown';
-            switch (e.keyCode) {
-                case 65: //a
-                case 37: //left arrow
-                    keys[KeyCode.LEFT] = pressed ? e.timeStamp : 0;
-                    return true;
+        loadImages();
+        loadSounds();
+    }
 
-                case 68: //d
-                case 39: //left arrow
-                    keys[KeyCode.RIGHT] = pressed ? e.timeStamp : 0;
-                    return true;
+    function loadSounds() {
+        var soundsLoaded = 0;
+        var soundPaths = [ 'background2', 'zombie' ];
 
-                case 87: //w
-                case 38: //up arrow
-                    keys[KeyCode.UP] = pressed ? e.timeStamp : 0;
-                    return true;
-
-                case 32: //space
-                    keys[KeyCode.ACTION] = pressed ? e.timeStamp : 0;
-                    e.preventDefault();
-
-                    return true;
+        var onload = function () {
+            soundsLoaded++;
+            console.log('Loaded sound ' + this.id);
+            if (soundsLoaded >= soundPaths.length) {
+                loadComplete();
             }
-        };
+        }
 
-        var sources = [ 'img/player.png', 'img/heart.png', 'img/zombie.png', 'levels/level1.png', 'img/dead.png', 'img/spikes.png', 'img/end.png', 'img/splash.png', 'img/overlay.png' ];
+        soundManager.setup({
+            url: 'swf',
+            preferFlash: true,
+            debugMode: false,
+            flashVersion: 8,
+            onready: function () {
+                for (var i = 0; i < soundPaths.length; i++) {
+                    sounds[soundPaths[i]] = soundManager.createSound({
+                        id: soundPaths[i],
+                        url: 'sounds/' + soundPaths[i] + '.mp3',
+                        autoLoad: true,
+                        volume: 60,
+                        onload: onload
+                    });
+                }
+            }
+        });
+    }
+
+    function loadImages() {
+        var sources = [
+            'img/player.png',
+            'img/heart.png',
+            'img/zombie.png',
+            'img/dead.png',
+            'img/spikes.png',
+            'img/end.png',
+            'img/splash.png',
+            'img/splash2.png',
+            'img/splash3.png',
+            'img/overlay.png'
+        ];
+        for (var i = 0; i < levels.length; i++) {
+            sources.push('levels/' + levels[i].image + '.png');
+        }
+
         var loaded = 0;
         var onload = function () {
             loaded++;
             var name = this.id.substr(this.id.lastIndexOf('/') + 1, this.id.length - this.id.lastIndexOf('/') - 5);
             spritesheets[name] = this;
             console.log('Loaded ' + name);
+
             if (loaded >= sources.length) {
-                ctx.drawImage(spritesheets['splash'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
-                applyFx();
-
-                window.setTimeout(function () {
-                    //Set up key listener
-                    document.onkeyup = keyListener;
-                    document.onkeydown = keyListener;
-
-                    loadLevel(0);
-                    requestAnimFrame(loop);
-                }, 2000);
+                loadComplete();
             }
         };
 
+        // Generate scanline overlays
         for (var x = 0; x < NUM_SCANLINES; x++) {
             var buffer = document.createElement('canvas');
             buffer.width = 32;
@@ -418,7 +476,7 @@ var game = (function () {
             var bufferCtx = buffer.getContext('2d');
             for (var i = 0; i < 32; i++) {
                 for (var j = 0; j < 32; j++) {
-                    var alpha = j % 6 >= 3 && j % 6 <= 5 ? Math.random() * 0.05: 0.04 + Math.random() * 0.05;
+                    var alpha = j % 6 >= 3 && j % 6 <= 5 ? Math.random() * 0.05 : 0.04 + Math.random() * 0.05;
                     bufferCtx.fillStyle = 'rgba(0, 0, 0, ' + alpha + ')';
                     bufferCtx.fillRect(i, j, 1, 1);
                 }
@@ -426,11 +484,53 @@ var game = (function () {
             spritesheets['scanline' + x] = buffer;
         }
 
+        // Start loading sprites
         for (var i = 0; i < sources.length; i++) {
             var imageObj = new Image();
             imageObj.onload = onload;
             imageObj.id = sources[i];
             imageObj.src = sources[i];
+        }
+    }
+
+    var toLoad = 2; // Sound and Music
+    var loaded = 0;
+
+    function loadComplete() {
+        loaded++;
+        if (loaded == toLoad) {
+            sounds['background2'].play({ loops: 3 });
+            requestAnimFrame(intro);
+        }
+    }
+
+    var introStarted = null;
+    var introTotal = 3000;
+
+    function intro() {
+        now = Date.now();
+        if(introStarted == null) {
+            introStarted = now;
+        }
+
+        if(now - introStarted < introTotal / 3) {
+            ctx.drawImage(spritesheets['splash'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
+        } else if(now - introStarted < introTotal * 2 / 3) {
+            ctx.drawImage(spritesheets['splash2'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
+        } else {
+            ctx.drawImage(spritesheets['splash3'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
+        }
+        applyFx();
+
+        if(now - introStarted < introTotal) {
+            requestAnimFrame(intro);
+        } else {
+            //Set up key listener
+            document.onkeyup = keyListener;
+            document.onkeydown = keyListener;
+
+            loadLevel(0);
+            requestAnimFrame(loop);
         }
     }
 
