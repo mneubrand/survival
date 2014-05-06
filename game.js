@@ -65,6 +65,16 @@ var game = (function () {
                 { type: 'Spike', startX: 330, startY: 53 },
                 { type: 'Spike', startX: 332, startY: 53 }
             ]
+        },
+        {
+            'image': 'level2',
+            'width': 343,
+            'height': 64,
+            'startX': 6,
+            'startY': 54,
+            'enemies': [
+
+            ]
         }
     ];
 
@@ -169,6 +179,7 @@ var game = (function () {
         this.fallingSpeed = 0;
         this.lives = 3;
         this.lastDamage = 0;
+        this.lastJump = 0;
 
         this.update = function () {
             if (now - this.lastUpdate > 80) {
@@ -195,7 +206,8 @@ var game = (function () {
                     }
 
                     // If jump is pressed jump in case we aren't jumping or falling
-                    if (keys[KeyCode.UP] > 0 && !this.jumpStarted && !this.isFalling()) {
+                    if (keys[KeyCode.UP] > this.lastJump && !this.jumpStarted && !this.isFalling()) {
+                        this.lastJump = keys[KeyCode.UP];
                         this.jumpStarted = true;
                         this.jumpMoves = 0;
                     }
@@ -207,7 +219,7 @@ var game = (function () {
                             this.sx = 3;
 
                             for (var i = 0; i < movement; i++) {
-                                if (!checkCollision(this.x, this.y - 7, 3, 1)) {
+                                if (!checkCollision(this.x, this.y - 6, 3, 1)) {
                                     this.y--;
                                 } else {
                                     this.jumpStarted = false;
@@ -529,7 +541,7 @@ var game = (function () {
             document.onkeyup = keyListener;
             document.onkeydown = keyListener;
 
-            loadLevel(0);
+            loadLevel(1);
             requestAnimFrame(loop);
         }
     }
