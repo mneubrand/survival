@@ -44,36 +44,49 @@ var game = (function () {
             'image': 'level1',
             'width': 343,
             'height': 64,
-            'startX': 6,
+            'startX': 1,
             'startY': 54,
             'enemies': [
-                { type: 'Zombie', startX: 99, startY: 55 },
-                { type: 'Zombie', startX: 219, startY: 47 },
-                { type: 'Spike', startX: 165, startY: 53 },
-                { type: 'Spike', startX: 252, startY: 53 },
-                { type: 'Spike', startX: 263, startY: 53 },
-                { type: 'Spike', startX: 290, startY: 53 },
-                { type: 'Spike', startX: 294, startY: 53 },
-                { type: 'Spike', startX: 298, startY: 53 },
-                { type: 'Spike', startX: 302, startY: 53 },
-                { type: 'Spike', startX: 306, startY: 53 },
-                { type: 'Spike', startX: 310, startY: 53 },
-                { type: 'Spike', startX: 314, startY: 53 },
-                { type: 'Spike', startX: 318, startY: 53 },
-                { type: 'Spike', startX: 322, startY: 53 },
-                { type: 'Spike', startX: 326, startY: 53 },
-                { type: 'Spike', startX: 330, startY: 53 },
-                { type: 'Spike', startX: 332, startY: 53 }
+                { type: 'Zombie', startX: 99, startY: 54 },
+                { type: 'Zombie', startX: 219, startY: 46 },
+                { type: 'Spike', startX: 165, startY: 52 },
+                { type: 'Spike', startX: 252, startY: 52 },
+                { type: 'Spike', startX: 263, startY: 52 },
+                { type: 'Spike', startX: 290, startY: 52 },
+                { type: 'Spike', startX: 294, startY: 52 },
+                { type: 'Spike', startX: 298, startY: 52 },
+                { type: 'Spike', startX: 302, startY: 52 },
+                { type: 'Spike', startX: 306, startY: 52 },
+                { type: 'Spike', startX: 310, startY: 52 },
+                { type: 'Spike', startX: 314, startY: 52 },
+                { type: 'Spike', startX: 318, startY: 52 },
+                { type: 'Spike', startX: 322, startY: 52 },
+                { type: 'Spike', startX: 326, startY: 52 },
+                { type: 'Spike', startX: 330, startY: 52 },
+                { type: 'Spike', startX: 332, startY: 52 }
             ]
         },
         {
             'image': 'level2',
-            'width': 343,
-            'height': 64,
-            'startX': 6,
-            'startY': 54,
+            'width': 92,
+            'height': 300,
+            'startX': 1,
+            'startY': 290,
             'enemies': [
-
+                { type: 'CeilingTrap', startX: 15, startY: 274 },
+                { type: 'Zombie', startX: 35, startY: 282 },
+                { type: 'Spike', startX: 61, startY: 288 },
+                { type: 'Spike', startX: 65, startY: 288 },
+                { type: 'Spike', startX: 69, startY: 288 },
+                { type: 'Spike', startX: 73, startY: 288 },
+                { type: 'Spike', startX: 75, startY: 288 },
+                { type: 'CeilingTrap', startX: 37, startY: 244 },
+                { type: 'Zombie', startX: 38, startY: 235 },
+                { type: 'Spike', startX: 67, startY: 239 },
+                { type: 'Spike', startX: 71, startY: 239 },
+                { type: 'Spike', startX: 82, startY: 239 },
+                { type: 'CeilingTrap', startX: 40, startY: 220 },
+                { type: 'CeilingTrap', startX: 27, startY: 220 }
             ]
         }
     ];
@@ -130,7 +143,7 @@ var game = (function () {
             if (now - this.lastUpdate > 300) {
                 this.lastUpdate = now;
 
-                if (!checkCollision(this.direction == Direction.LEFT ? this.x - 1 : this.x + 3, this.y - 6, 1, 6)) {
+                if (!checkCollision(this.direction == Direction.LEFT ? this.x - 1 : this.x + 3, this.y - 5, 1, 6)) {
                     this.x += this.direction == Direction.LEFT ? -1 : 1;
                 } else {
                     this.direction = this.direction == Direction.LEFT ? Direction.RIGHT : Direction.LEFT;
@@ -140,14 +153,14 @@ var game = (function () {
                 this.sy = this.direction == Direction.LEFT ? 1 : 0;
             }
 
-            if(Math.abs(this.x - sprites[0].x) < 15 && (!sounds['zombie'].lastPlayed || now - sounds['zombie'].lastPlayed > 3000)) {
+            if(Math.abs(this.x - sprites[0].x) < 15 && Math.abs(this.y - sprites[0].y) < 15 && (!sounds['zombie'].lastPlayed || now - sounds['zombie'].lastPlayed > 3000)) {
                 sounds['zombie'].lastPlayed = now;
                 sounds['zombie'].play();
             }
         };
 
         this.draw = function () {
-            ctx.translate(0, -6 * SCALE);
+            ctx.translate(0, -5 * SCALE);
             ctx.drawImage(spritesheets['zombie'], this.sx * 3, this.sy * 6, 3, 6, this.x * SCALE, this.y * SCALE, 3 * SCALE, 6 * SCALE);
         };
     }
@@ -163,8 +176,48 @@ var game = (function () {
         };
 
         this.draw = function () {
-            ctx.translate(0, -3 * SCALE);
+            ctx.translate(0, -2 * SCALE);
             ctx.drawImage(spritesheets['spikes'], 0, 0, 3, 3, this.x * SCALE, this.y * SCALE, 3 * SCALE, 3 * SCALE);
+        };
+    }
+
+    function CeilingTrap(x, y) {
+        this.x = x;
+        this.y = y;
+        this.height = 2;
+        this.width = 1;
+        this.damage = 1;
+        this.lastUpdate = 0;
+        this.falling = false;
+
+        this.update = function () {
+            // If in line underneath the trap
+            if(!this.falling && this.y < sprites[0].y && this.x >= sprites[0].x && this.x < sprites[0].x + 3) {
+                for (var j = this.y; j < sprites[0].y - 6; j++) {
+                    var offset = this.x + j * level.width;
+                    if (level.imageData[offset * 4 + 3] != 0) {
+                        return;
+                    }
+                }
+
+                this.falling = true;
+                sounds['falling'].play();
+            }
+
+            if(this.falling && now - this.lastUpdate > 40) {
+                this.lastUpdate = now;
+
+                if(checkCollision(this.x, this.y + 1, 1, 1)) {
+                    this.disabled = true;
+                } else {
+                    this.y++;
+                }
+            }
+        };
+
+        this.draw = function () {
+            ctx.translate(0, -1 * SCALE);
+            ctx.drawImage(spritesheets['ceiling'], 0, 0, 1, 2, this.x * SCALE, this.y * SCALE, this.width * SCALE, this.height * SCALE);
         };
     }
 
@@ -179,7 +232,6 @@ var game = (function () {
         this.fallingSpeed = 0;
         this.lives = 3;
         this.lastDamage = 0;
-        this.lastJump = 0;
 
         this.update = function () {
             if (now - this.lastUpdate > 80) {
@@ -192,8 +244,8 @@ var game = (function () {
                         this.sx = (this.sx + 1) % 3;
 
                         for (var i = 0; i < 2; i++) {
-                            var wallAhead = checkCollision(this.direction == Direction.LEFT ? this.x - 1 : this.x + 3, this.y - 6, 1, 5);
-                            var stepAhead = checkCollision(this.direction == Direction.LEFT ? this.x - 1 : this.x + 3, this.y - 1, 1, 1);
+                            var wallAhead = checkCollision(this.direction == Direction.LEFT ? this.x : this.x + 2, this.y - 5, 1, 5);
+                            var stepAhead = checkCollision(this.direction == Direction.LEFT ? this.x : this.x + 2, this.y, 1, 1);
                             if (!wallAhead && stepAhead) {
                                 this.x += this.direction == Direction.LEFT ? -1 : 1;
                                 this.y--;
@@ -206,27 +258,26 @@ var game = (function () {
                     }
 
                     // If jump is pressed jump in case we aren't jumping or falling
-                    if (keys[KeyCode.UP] > this.lastJump && !this.jumpStarted && !this.isFalling()) {
-                        this.lastJump = keys[KeyCode.UP];
+                    if (keys[KeyCode.UP] > 0 && !this.jumpStarted && !this.isFalling()) {
                         this.jumpStarted = true;
                         this.jumpMoves = 0;
                     }
 
                     if (this.jumpStarted) {
                         // Jump for 4 ticks
-                        if (this.jumpMoves < 4) {
-                            var movement = 4 - this.jumpMoves;
+                        if (this.jumpMoves < 2) {
+                            var movement = 3 - Math.floor(this.jumpMoves);
                             this.sx = 3;
 
                             for (var i = 0; i < movement; i++) {
-                                if (!checkCollision(this.x, this.y - 6, 3, 1)) {
+                                if (!checkCollision(this.direction == Direction.RIGHT ? this.x : this.x + 1, this.y - 6, 2, 1)) {
                                     this.y--;
                                 } else {
                                     this.jumpStarted = false;
                                 }
                             }
 
-                            this.jumpMoves++;
+                            this.jumpMoves+=0.5;
                         } else {
                             this.jumpStarted = false;
                         }
@@ -259,11 +310,11 @@ var game = (function () {
         this.draw = function () {
             if (this.lives > 0) {
                 // Draw player
-                ctx.translate(0, -6 * SCALE);
+                ctx.translate(0, -5 * SCALE);
                 ctx.drawImage(spritesheets['player'], this.sx * 3, this.sy * 6, 3, 6, this.x * SCALE, this.y * SCALE, 3 * SCALE, 6 * SCALE);
             } else {
                 // Draw player
-                ctx.translate(-1 * SCALE, -2 * SCALE);
+                ctx.translate(-1 * SCALE, -1 * SCALE);
                 ctx.drawImage(spritesheets['dead'], 0, this.direction == Direction.LEFT ? 3 : 0, 6, 3, this.x * SCALE, this.y * SCALE, 6 * SCALE, 3 * SCALE);
             }
         };
@@ -272,16 +323,22 @@ var game = (function () {
             if (now - this.lastDamage > 500 && this.lives > 0) {
                 this.lives -= damage;
                 this.lastDamage = now;
+
+                if(this.lives <= 0) {
+                    sounds['death'].play();
+                } else {
+                    sounds['hurt'].play();
+                }
             }
         }
 
         this.isFalling = function () {
-            if (this.jumpStarted) {
+            if (this.jumpStarted && this.lives > 0) {
                 return false;
             }
 
             // Check pixels directly under player
-            return !checkCollision(this.x, this.y, 3, 1);
+            return !checkCollision(this.direction == Direction.RIGHT ? this.x : this.x + 1, this.y + 1, 2, 1);
         };
     }
 
@@ -290,10 +347,10 @@ var game = (function () {
             return true;
         }
 
-        for (var i = x; i < x + width; i++) {
+        for (var i = x; i < x + width && i < level.width; i++) {
             for (var j = y; j < y + height; j++) {
                 var offset = i + j * level.width;
-                if (level.imageData[offset * 4 + 3] != 0) {
+                if (offset * 4 + 3 < level.imageData.length && level.imageData[offset * 4 + 3] != 0) {
                     return true;
                 }
             }
@@ -306,13 +363,16 @@ var game = (function () {
 
         // Update sprites
         for (var i = 0; i < sprites.length; i++) {
+            if(sprites[i].disabled) {
+                continue;
+            }
+
             sprites[i].update();
 
             // Check for collision with player
             if (i > 0) {
-                // Overlap
-                if (sprites[0].x < sprites[i].x + sprites[i].width && sprites[0].x + sprites[0].width > sprites[i].x
-                    && sprites[0].y < sprites[i].y + sprites[i].height && sprites[0].y + sprites[0].height > sprites[i].y) {
+                if (sprites[0].x < sprites[i].x + sprites[i].width && sprites[i].x < sprites[0].x + sprites[0].width
+                    && sprites[0].y - sprites[0].height < sprites[i].y && sprites[i].y - sprites[i].height < sprites[0].y) {
                     sprites[0].takeDamage(sprites[i].damage);
                 }
             }
@@ -323,7 +383,7 @@ var game = (function () {
         var offsetY = sprites[0].y - 16;
 
         // Screen shake when hurt
-        var shake = 200;
+        var shake = 300;
         var diff = now - sprites[0].lastDamage;
         if (diff < shake) {
             offsetX += diff < shake / 4 || diff > shake * 3 / 4 ? -1 : 1;
@@ -341,7 +401,8 @@ var game = (function () {
         ctx.drawImage(spritesheets[level.image], 0, 0, level.width, level.height, -offsetX * SCALE, -offsetY * SCALE, level.width * SCALE, level.height * SCALE);
 
         // Draw sprites and player
-        for (var i = sprites.length - 1; i >= 0; i--) {
+        //for (var i = sprites.length - 1; i >= 0; i--) {
+        for (var i = 0; i < sprites.length; i++) {
             ctx.save();
 
             //Translate canvas to sprite position
@@ -354,7 +415,7 @@ var game = (function () {
 
         // Draw HUD
         for (var i = 0; i < sprites[0].lives; i++) {
-            ctx.drawImage(spritesheets['heart'], 0, 0, 5, 6, (1 + i * 6) * SCALE, 1 * SCALE, 5 * SCALE, 6 * SCALE);
+            ctx.drawImage(spritesheets['heart'], 0, 0, 3, 3, (32 - (i+1) * 4) * SCALE, 1 * SCALE, 3 * SCALE, 3 * SCALE);
         }
 
         if (sprites[0].x >= level.width) {
@@ -404,6 +465,8 @@ var game = (function () {
                 sprites.push(new Zombie(enemy.startX, enemy.startY));
             } else if (enemy.type == 'Spike') {
                 sprites.push(new Spike(enemy.startX, enemy.startY));
+            } else if (enemy.type == 'CeilingTrap') {
+                sprites.push(new CeilingTrap(enemy.startX, enemy.startY));
             }
         }
     }
@@ -422,7 +485,13 @@ var game = (function () {
 
     function loadSounds() {
         var soundsLoaded = 0;
-        var soundPaths = [ 'background2', 'zombie' ];
+        var soundPaths = [
+            'background2',
+            'zombie',
+            'death',
+            'hurt',
+            'falling'
+        ];
 
         var onload = function () {
             soundsLoaded++;
@@ -458,6 +527,7 @@ var game = (function () {
             'img/zombie.png',
             'img/dead.png',
             'img/spikes.png',
+            'img/ceiling.png',
             'img/end.png',
             'img/splash.png',
             'img/splash2.png',
