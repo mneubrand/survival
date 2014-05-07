@@ -654,7 +654,7 @@ var game = (function () {
             document.onkeyup = keyListener;
             document.onkeydown = keyListener;
 
-            loadLevel(3);
+            loadLevel(0);
             requestAnimFrame(loop);
         }
     }
