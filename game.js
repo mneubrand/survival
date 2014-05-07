@@ -41,6 +41,19 @@ var game = (function () {
     var currentLevel;
     var levels = [
         {
+            'image': 'level0',
+            'width': 254,
+            'height': 64,
+            'startX': 1,
+            'startY': 54,
+            'enemies': [
+                { type: 'Zombie', startX: 99, startY: 47 },
+                { type: 'Zombie', startX: 127, startY: 47 },
+                { type: 'Zombie', startX: 150, startY: 47 },
+                { type: 'Zombie', startX: 210, startY: 54 }
+            ]
+        },
+        {
             'image': 'level1',
             'width': 343,
             'height': 64,
@@ -87,6 +100,25 @@ var game = (function () {
                 { type: 'Spike', startX: 82, startY: 239 },
                 { type: 'CeilingTrap', startX: 40, startY: 220 },
                 { type: 'CeilingTrap', startX: 27, startY: 220 }
+            ]
+        },
+        {
+            'image': 'level3',
+            'width': 191,
+            'height': 64,
+            'startX': 1,
+            'startY': 47,
+            'enemies': [
+                { type: 'CeilingTrap', startX: 18, startY: 36 },
+                { type: 'CeilingTrap', startX: 55, startY: 35 },
+                { type: 'Zombie', startX: 29, startY: 54 },
+                { type: 'Spike', startX: 82, startY: 45 },
+                { type: 'Spike', startX: 86, startY: 45 },
+                { type: 'Spike', startX: 98, startY: 54 },
+                { type: 'CeilingTrap', startX: 101, startY: 18 },
+                { type: 'Spike', startX: 111, startY: 49 },
+                { type: 'Zombie', startX: 132, startY: 54 },
+                { type: 'Zombie', startX: 148, startY: 46 }
             ]
         }
     ];
@@ -140,7 +172,7 @@ var game = (function () {
         this.damage = 1;
 
         this.update = function () {
-            if (now - this.lastUpdate > 300) {
+            if (now - this.lastUpdate > 200) {
                 this.lastUpdate = now;
 
                 if (!checkCollision(this.direction == Direction.LEFT ? this.x - 1 : this.x + 3, this.y - 5, 1, 6)) {
@@ -153,9 +185,17 @@ var game = (function () {
                 this.sy = this.direction == Direction.LEFT ? 1 : 0;
             }
 
-            if(Math.abs(this.x - sprites[0].x) < 15 && Math.abs(this.y - sprites[0].y) < 15 && (!sounds['zombie'].lastPlayed || now - sounds['zombie'].lastPlayed > 3000)) {
+            if (Math.abs(this.x - sprites[0].x) < 15 && Math.abs(this.y - sprites[0].y) < 15 && (!sounds['zombie'].lastPlayed || now - sounds['zombie'].lastPlayed > 3000)) {
                 sounds['zombie'].lastPlayed = now;
-                sounds['zombie'].play();
+
+                var zombieSound = 'zombie';
+                var rand = Math.random();
+                if (rand < 0.33) {
+                    zombieSound = 'zombie2';
+                } else if (rand < 0.67) {
+                    zombieSound = 'zombie3';
+                }
+                sounds[zombieSound].play();
             }
         };
 
@@ -192,7 +232,7 @@ var game = (function () {
 
         this.update = function () {
             // If in line underneath the trap
-            if(!this.falling && this.y < sprites[0].y && this.x >= sprites[0].x && this.x < sprites[0].x + 3) {
+            if (!this.falling && this.y < sprites[0].y && this.x >= sprites[0].x && this.x < sprites[0].x + 3) {
                 for (var j = this.y; j < sprites[0].y - 6; j++) {
                     var offset = this.x + j * level.width;
                     if (level.imageData[offset * 4 + 3] != 0) {
@@ -204,10 +244,10 @@ var game = (function () {
                 sounds['falling'].play();
             }
 
-            if(this.falling && now - this.lastUpdate > 40) {
+            if (this.falling && now - this.lastUpdate > 40) {
                 this.lastUpdate = now;
 
-                if(checkCollision(this.x, this.y + 1, 1, 1)) {
+                if (checkCollision(this.x, this.y + 1, 1, 1)) {
                     this.disabled = true;
                 } else {
                     this.y++;
@@ -277,7 +317,7 @@ var game = (function () {
                                 }
                             }
 
-                            this.jumpMoves+=0.5;
+                            this.jumpMoves += 0.5;
                         } else {
                             this.jumpStarted = false;
                         }
@@ -324,7 +364,7 @@ var game = (function () {
                 this.lives -= damage;
                 this.lastDamage = now;
 
-                if(this.lives <= 0) {
+                if (this.lives <= 0) {
                     sounds['death'].play();
                 } else {
                     sounds['hurt'].play();
@@ -363,7 +403,7 @@ var game = (function () {
 
         // Update sprites
         for (var i = 0; i < sprites.length; i++) {
-            if(sprites[i].disabled) {
+            if (sprites[i].disabled) {
                 continue;
             }
 
@@ -383,7 +423,7 @@ var game = (function () {
         var offsetY = sprites[0].y - 16;
 
         // Screen shake when hurt
-        var shake = 300;
+        var shake = 500;
         var diff = now - sprites[0].lastDamage;
         if (diff < shake) {
             offsetX += diff < shake / 4 || diff > shake * 3 / 4 ? -1 : 1;
@@ -401,8 +441,8 @@ var game = (function () {
         ctx.drawImage(spritesheets[level.image], 0, 0, level.width, level.height, -offsetX * SCALE, -offsetY * SCALE, level.width * SCALE, level.height * SCALE);
 
         // Draw sprites and player
-        //for (var i = sprites.length - 1; i >= 0; i--) {
-        for (var i = 0; i < sprites.length; i++) {
+        for (var i = sprites.length - 1; i >= 0; i--) {
+        //for (var i = 0; i < sprites.length; i++) {
             ctx.save();
 
             //Translate canvas to sprite position
@@ -415,7 +455,7 @@ var game = (function () {
 
         // Draw HUD
         for (var i = 0; i < sprites[0].lives; i++) {
-            ctx.drawImage(spritesheets['heart'], 0, 0, 3, 3, (32 - (i+1) * 4) * SCALE, 1 * SCALE, 3 * SCALE, 3 * SCALE);
+            ctx.drawImage(spritesheets['heart'], 0, 0, 3, 3, (32 - (i + 1) * 4) * SCALE, 1 * SCALE, 3 * SCALE, 3 * SCALE);
         }
 
         if (sprites[0].x >= level.width) {
@@ -427,6 +467,7 @@ var game = (function () {
                 applyFx();
                 document.onkeyup = null;
                 document.onkeydown = null;
+                requestAnimFrame(outro);
                 return;
             }
         }
@@ -488,6 +529,8 @@ var game = (function () {
         var soundPaths = [
             'background2',
             'zombie',
+            'zombie2',
+            'zombie3',
             'death',
             'hurt',
             'falling'
@@ -591,29 +634,45 @@ var game = (function () {
 
     function intro() {
         now = Date.now();
-        if(introStarted == null) {
+        if (introStarted == null) {
             introStarted = now;
         }
 
-        if(now - introStarted < introTotal / 3) {
+        if (now - introStarted < introTotal / 3) {
             ctx.drawImage(spritesheets['splash'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
-        } else if(now - introStarted < introTotal * 2 / 3) {
+        } else if (now - introStarted < introTotal * 2 / 3) {
             ctx.drawImage(spritesheets['splash2'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
         } else {
             ctx.drawImage(spritesheets['splash3'], 0, 0, 32, 32, 0, 0, 32 * SCALE, 32 * SCALE);
         }
         applyFx();
 
-        if(now - introStarted < introTotal) {
+        if (now - introStarted < introTotal) {
             requestAnimFrame(intro);
         } else {
             //Set up key listener
             document.onkeyup = keyListener;
             document.onkeydown = keyListener;
 
-            loadLevel(1);
+            loadLevel(3);
             requestAnimFrame(loop);
         }
+    }
+
+    var outroStarted = null;
+
+    function outro() {
+        now = Date.now();
+        if (outroStarted == null) {
+            outroStarted = now;
+        }
+
+        if (now - outroStarted > 2000) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+            ctx.fillRect(0, 0, 32 * SCALE, 32 * SCALE);
+        }
+
+        requestAnimFrame(outro);
     }
 
     return {
